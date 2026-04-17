@@ -1,0 +1,6 @@
+{
+  "name": "NIOS II Parallel Sim",
+  "description": "A multi-core NIOS II parallel computing simulator with shared memory and pseudocode execution for educational purposes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
