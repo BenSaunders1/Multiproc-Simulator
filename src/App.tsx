@@ -95,16 +95,12 @@ HALT`,
     name: "Deadlock",
     description: "Core 0 locks Mutex 0 while Core 1 locks Mutex 1. They then each attempt to lock the other's mutex, causing both cores to freeze in a waiting state.",
     p0: `LOCK 0 // Core 0 locks Mutex 0
-NOP // Yield to ensure Core 1 gets time
 LOCK 1 // Core 0 waits for Mutex 1
-// Will never reach here
 UNLOCK 1
 UNLOCK 0
 HALT`,
     p1: `LOCK 1 // Core 1 locks Mutex 1
-NOP // Yield to ensure Core 0 gets time
 LOCK 0 // Core 1 waits for Mutex 0
-// Will never reach here
 UNLOCK 0
 UNLOCK 1
 HALT`,
@@ -234,8 +230,8 @@ export default function App() {
               <Slider 
                 value={speed} 
                 onValueChange={setSpeed} 
-                min={50} 
-                max={2000} 
+                min={10} 
+                max={1000} 
                 step={50} 
                 className="w-32"
                 inverted
@@ -302,16 +298,16 @@ export default function App() {
             
             <Card className="border-none bg-muted shadow-sm">
               <CardHeader className="py-3">
-                <CardTitle className="text-xs font-mono uppercase opacity-60 text-foreground">Instruction Set</CardTitle>
+                <CardTitle className="text-s font-mono uppercase opacity-60 text-foreground">Instruction Set</CardTitle>
               </CardHeader>
-              <CardContent className="text-[10px] font-mono space-y-1 opacity-80 text-foreground">
-                <p><span className="font-bold text-blue-400">MOV dest, val</span> - Set register to value</p>
-                <p><span className="font-bold text-blue-400">ADD d, s1, s2</span> - d = s1 + s2</p>
-                <p><span className="font-bold text-blue-400">LOAD d, addr</span> - d = mem[addr]</p>
-                <p><span className="font-bold text-blue-400">STORE s, addr</span> - mem[addr] = s</p>
-                <p><span className="font-bold text-blue-400">LOCK addr</span> - Atomic lock at addr</p>
-                <p><span className="font-bold text-blue-400">UNLOCK addr</span> - Release lock at addr</p>
-                <p><span className="font-bold text-blue-400">BEQ r1, r2, pc</span> - Branch if r1 == r2</p>
+              <CardContent className="text-[14px] font-mono space-y-1 opacity-80 text-foreground">
+                <p><span className="font-bold text-blue-600">MOV dest, val</span> - Set register to value</p>
+                <p><span className="font-bold text-blue-600">ADD d, s1, s2</span> - d = s1 + s2</p>
+                <p><span className="font-bold text-blue-600">LOAD d, addr</span> - d = mem[addr]</p>
+                <p><span className="font-bold text-blue-600">STORE s, addr</span> - mem[addr] = s</p>
+                <p><span className="font-bold text-blue-600">LOCK addr</span> - Atomic lock at addr</p>
+                <p><span className="font-bold text-blue-600">UNLOCK addr</span> - Release lock at addr</p>
+                <p><span className="font-bold text-blue-600">BEQ r1, r2, pc</span> - Branch if r1 == r2</p>
                 <div className="pt-2 border-t border-border/50 opacity-50">
                   <p>Comments: //, #, or ;</p>
                 </div>
