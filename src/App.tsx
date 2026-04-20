@@ -61,12 +61,14 @@ const PRESETS = {
     description: "Core 0 locks Mutex 0 while Core 1 locks Mutex 1. They then each attempt to lock the other's mutex, causing both cores to freeze in a waiting state.",
     p0: `LOCK 0 // Core 0 locks Mutex 0
 LOCK 1 // Core 0 waits for Mutex 1
+// Do Something
 UNLOCK 1
 UNLOCK 0
 HALT`,
     p1: `LOCK 1 // Core 1 locks Mutex 1
 
 LOCK 0 // Core 1 waits for Mutex 0
+// Do Something
 UNLOCK 0
 UNLOCK 1
 HALT`,
