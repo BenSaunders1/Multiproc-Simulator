@@ -4,7 +4,6 @@ import {
   Play, 
   Pause, 
   RotateCcw, 
-  FastForward, 
   Cpu, 
   Database, 
   Terminal, 
@@ -19,7 +18,6 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -35,61 +33,28 @@ const INSTRUCTIONS: InstructionType[] = [
 const REGISTERS = ['r0', 'r1', 'r2', 'r3'];
 
 const PRESETS = {
-  race: {
-    name: "Race Condition",
-    description: "Both cores increment a shared counter at address 0 without locks. Final value might be 1 instead of 2.",
-    p0: `LOAD r1, 0
-NOP // Delay to increase race chance
-ADD r1, r1, 1
-STORE r1, 0
-HALT`,
-    p1: `LOAD r1, 0
-ADD r1, r1, 1
-STORE r1, 0
-HALT`,
+  ex: {
+    name: "Example",
+    description: "",
+    p0: `
+    LOAD R0, 3
+    ADD r0, r0, 1
+    STORE r0, 3
+    BEQ r0, 5, 5
+    BEQ r0, r0, 0
+    HALT`,
+    p1: `LOAD R0, 10
+    ADD r0, r0, 1
+    STORE r0, 10
+    BEQ r0, 9, 5
+    BEQ r0, r0, 0
+    HALT`,
   },
-  mutex: {
-    name: "Mutex Lock",
-    description: "Cores use dedicated Mutex 0 to synchronize access to the counter at address 0.",
-    p0: `LOCK 0 // Acquire Mutex 0
-LOAD r1, 0
-ADD r1, r1, 1
-STORE r1, 0
-UNLOCK 0 // Release Mutex 0
-HALT`,
-    p1: `LOCK 0 // Acquire Mutex 0
-LOAD r1, 0
-ADD r1, r1, 1
-STORE r1, 0
-UNLOCK 0 // Release Mutex 0
-HALT`,
-  },
-  pingpong: {
-    name: "Ping Pong",
-    description: "Core 0 writes 1, Core 1 waits for 1 then writes 2.",
-    p0: `MOV r1, 1
-STORE r1, 0 // Write 1 to memory[0]
-HALT`,
-    p1: `LOAD r1, 0
-BEQ r1, 0, 0 // Wait until memory[0] != 0
-MOV r1, 2
-STORE r1, 0 // Write 2 to memory[0]
-HALT`,
-  },
-  cache_demo: {
-    name: "Cache Coherence",
-    description: "Demonstrates the VI protocol. Core 0 experiences a cache miss, then a hit. Core 1 then writes to the same address, invalidating Core 0's cache.",
-    p0: `LOAD r1, 0 // Miss -> Valid
-LOAD r2, 0 // Hit
-NOP // Wait for Core 1
-NOP // Wait for Core 1 STORE
-LOAD r3, 0 // Miss (Invalidated by Core 1)
-HALT`,
-    p1: `NOP
-NOP
-MOV r1, 42
-STORE r1, 0 // Invalidates Core 0's cache
-HALT`,
+  blank: {
+    name: "Blank Code",
+    description: "",
+    p0: `// Enter code here...`,
+    p1: `// Enter code here...`,
   },
   deadlock: {
     name: "Deadlock",
@@ -100,6 +65,7 @@ UNLOCK 1
 UNLOCK 0
 HALT`,
     p1: `LOCK 1 // Core 1 locks Mutex 1
+
 LOCK 0 // Core 1 waits for Mutex 0
 UNLOCK 0
 UNLOCK 1
@@ -108,10 +74,9 @@ HALT`,
 };
 
 export default function App() {
-  const [state, setState] = useState<SimulatorState>(createInitialState(parseProgram(PRESETS.race.p0), parseProgram(PRESETS.race.p1)));
+  const [state, setState] = useState<SimulatorState>(createInitialState(parseProgram(PRESETS.ex.p0), parseProgram(PRESETS.ex.p1)));
   const [isRunning, setIsRunning] = useState(false);
-  const [speed, setSpeed] = useState([500]); // ms per cycle
-  const [activePreset, setActivePreset] = useState<keyof typeof PRESETS>('race');
+  const [activePreset, setActivePreset] = useState<keyof typeof PRESETS>('ex');
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
@@ -123,8 +88,8 @@ export default function App() {
   }, [isDark]);
 
   
-  const [core0Code, setCore0Code] = useState(PRESETS.race.p0);
-  const [core1Code, setCore1Code] = useState(PRESETS.race.p1);
+  const [core0Code, setCore0Code] = useState(PRESETS.ex.p0);
+  const [core1Code, setCore1Code] = useState(PRESETS.ex.p1);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -139,14 +104,14 @@ export default function App() {
           }
           return next;
         });
-      }, speed[0]);
+      }, 500); // 2 instructions per second
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isRunning, speed]);
+  }, [isRunning]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -207,8 +172,8 @@ export default function App() {
               >
                 {isRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </Button>
-              <Button variant="outline" size="icon" onClick={handleStep} className="rounded-lg border-border text-muted-foreground hover:bg-muted">
-                <FastForward className="w-5 h-5" />
+              <Button variant="outline" onClick={handleStep} className="rounded-lg border-border text-muted-foreground hover:bg-muted gap-2">
+                Step
               </Button>
               <Button variant="outline" size="icon" onClick={handleReset} className="rounded-lg border-border text-muted-foreground hover:bg-muted">
                 <RotateCcw className="w-5 h-5" />
@@ -225,18 +190,7 @@ export default function App() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-4 px-4 border-l border-border min-w-[200px]">
-              <span className="text-xs font-mono uppercase opacity-50">Speed</span>
-              <Slider 
-                value={speed} 
-                onValueChange={setSpeed} 
-                min={10} 
-                max={1000} 
-                step={50} 
-                className="w-32"
-                inverted
-              />
-            </div>
+
             
             <div className="flex items-center pl-4 border-l border-border">
               <Button variant="ghost" size="icon" onClick={() => setIsDark(!isDark)} className="rounded-full">
